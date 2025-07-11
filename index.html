@@ -1,0 +1,339 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gửi Lời Chúc Tới 2 Cô Dâu!</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Pacifico&family=Quicksand:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Quicksand', sans-serif;
+            background-image: url('https://images.unsplash.com/photo-1478131143081-80f7f84ca84d?q=80&w=2070&auto=format&fit=crop');
+            background-size: cover;
+            background-position: center;
+            background-attachment: fixed;
+        }
+        .font-pacifico {
+            font-family: 'Pacifico', cursive;
+        }
+        .chat-bubble {
+            max-width: 75%;
+            padding: 10px 15px;
+            border-radius: 20px;
+            margin-bottom: 10px;
+            word-wrap: break-word;
+        }
+        .user-bubble {
+            background-color: #0d9488; /* teal-600 */
+            color: white;
+            align-self: flex-end;
+            border-bottom-right-radius: 5px;
+        }
+        .bot-bubble {
+            background-color: #374151; /* gray-700 */
+            color: #d1d5db; /* gray-300 */
+            align-self: flex-start;
+            border-bottom-left-radius: 5px;
+        }
+        .lang-btn.active {
+            background-color: #14b8a6; /* teal-500 */
+            color: white;
+        }
+    </style>
+</head>
+<body class="text-gray-200">
+
+    <div class="container mx-auto p-4 md:p-8 max-w-2xl">
+        <div class="bg-gray-900/80 backdrop-blur-sm rounded-2xl shadow-2xl p-6 md:p-10 relative">
+
+            <!-- --- THAY ĐỔI: Thêm khu vực chọn ngôn ngữ --- -->
+            <div class="absolute top-4 right-4 flex space-x-2">
+                <button id="lang-vi" class="lang-btn px-3 py-1 text-sm border border-teal-600 rounded-md hover:bg-teal-700 transition">Tiếng Việt</button>
+                <button id="lang-en" class="lang-btn px-3 py-1 text-sm border border-teal-600 rounded-md hover:bg-teal-700 transition">English</button>
+            </div>
+
+            <header class="text-center mb-8 pt-8">
+                <h1 id="main-title" class="font-pacifico text-4xl md:text-5xl text-teal-300"></h1>
+                <p id="main-subtitle" class="text-gray-400 mt-2 text-lg"></p>
+            </header>
+
+            <div class="space-y-6">
+                <div>
+                    <label id="name-label" for="guestName" class="block text-md font-semibold text-gray-300 mb-2"></label>
+                    <input type="text" id="guestName" class="w-full px-4 py-3 bg-gray-800 border border-teal-700 rounded-lg focus:ring-teal-500 focus:border-teal-500 transition text-white placeholder-gray-500">
+                </div>
+                <div>
+                    <label id="wish-label" for="guestWish" class="block text-md font-semibold text-gray-300 mb-2"></label>
+                    <textarea id="guestWish" rows="5" class="w-full px-4 py-3 bg-gray-800 border border-teal-700 rounded-lg focus:ring-teal-500 focus:border-teal-500 transition text-white placeholder-gray-500"></textarea>
+                </div>
+                <button id="submitWish" class="w-full bg-teal-500 text-white font-bold py-3 px-6 rounded-lg hover:bg-teal-600 transition-transform transform hover:scale-105 shadow-lg"></button>
+            </div>
+
+            <div class="mt-12 border-t-2 border-teal-900/50 pt-8">
+                <h2 id="chatbot-title" class="font-pacifico text-3xl text-center text-teal-300 mb-6"></h2>
+                <div class="bg-gray-900/70 p-4 rounded-xl shadow-inner max-w-2xl mx-auto">
+                    <div id="chatbox" class="h-64 overflow-y-auto mb-4 p-2 flex flex-col space-y-2">
+                        <!-- Tin nhắn mặc định sẽ được thêm bằng JS -->
+                    </div>
+                    <div class="flex space-x-2">
+                        <input type="text" id="chatInput" class="flex-grow px-4 py-2 bg-gray-700 border border-gray-600 rounded-full focus:ring-teal-500 focus:border-teal-500 text-white placeholder-gray-400">
+                        <button id="sendChat" class="bg-teal-500 text-white rounded-full p-3 hover:bg-teal-600 transition">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-send"><line x1="22" y1="2" x2="11" y2="13"></line><polygon points="22 2 15 22 11 13 2 9 22 2"></polygon></svg>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script type="module">
+        // --- Firebase Configuration ---
+        const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-wedding-app';
+        const firebaseConfig = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : { apiKey: "DEMO", authDomain: "DEMO", projectId: "DEMO" };
+        const initialAuthToken = typeof __initial_auth_token !== 'undefined' ? __initial_auth_token : null;
+
+        // --- Firebase Imports ---
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+        import { getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        import { getFirestore, collection, addDoc, onSnapshot, query } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+
+        // --- Firebase Initialization ---
+        let app, auth, db;
+        let userId = null;
+        let wishesCache = [];
+
+        try {
+            app = initializeApp(firebaseConfig);
+            auth = getAuth(app);
+            db = getFirestore(app);
+        } catch (e) {
+            console.error("Firebase initialization failed:", e);
+        }
+
+        // --- Authentication ---
+        onAuthStateChanged(auth, async (user) => {
+            if (user) {
+                userId = user.uid;
+                listenForWishes();
+            } else {
+                try {
+                    if (initialAuthToken) {
+                        await signInWithCustomToken(auth, initialAuthToken);
+                    } else {
+                        await signInAnonymously(auth);
+                    }
+                } catch (error) {
+                    console.error("Authentication failed:", error);
+                }
+            }
+        });
+
+        // --- DOM Elements ---
+        const guestName = document.getElementById('guestName');
+        const guestWish = document.getElementById('guestWish');
+        const submitWishBtn = document.getElementById('submitWish');
+        const chatbox = document.getElementById('chatbox');
+        const chatInput = document.getElementById('chatInput');
+        const sendChatBtn = document.getElementById('sendChat');
+        const langViBtn = document.getElementById('lang-vi');
+        const langEnBtn = document.getElementById('lang-en');
+
+        // --- I18N & Language Logic ---
+        let currentLanguage = 'vi';
+        const translations = {
+            en: {
+                mainTitle: "Send Your Wishes",
+                mainSubtitle: "To our two lovely brides!",
+                nameLabel: "Your Name",
+                namePlaceholder: "E.g., Jane Doe",
+                wishLabel: "Your sweet wish",
+                wishPlaceholder: "Wishing you a lifetime of happiness...",
+                submitButton: "Send Wish",
+                submitButtonSending: "Sending...",
+                chatbotTitle: "Chat with the Wedding Secretary",
+                chatbotPlaceholder: "Ask the secretary...",
+                initialBotMessage: "Hello! Do you have any questions about the wishes everyone has sent?",
+                fillFieldsMessage: "Please fill in both your name and your wish!",
+                wishSentMessage: "Thank you for sending your wish!",
+                wishErrorMessage: "An error occurred while sending your wish. Please try again.",
+                noWishesMessage: "There are no wishes for me to analyze yet.",
+                botThinking: "The secretary is thinking...",
+                botErrorMessage: "Sorry, I'm having a little trouble. Please try again later.",
+                ragPromptSystem: "You are an AI wedding secretary. Based on the list of wishes below, answer the user's question. IMPORTANT: Only use information from the provided wishes. Do not invent or add any external information. If the question cannot be answered from the given information, politely state that you do not have that information in the wishes.",
+                ragWishesList: "List of wishes:",
+                ragUserQuestion: "User's question:"
+            },
+            vi: {
+                mainTitle: "Gửi Lời Chúc",
+                mainSubtitle: "Tới hai cô dâu của chúng ta!",
+                nameLabel: "Tên của bạn",
+                namePlaceholder: "Ví dụ: An Nhiên",
+                wishLabel: "Lời chúc ngọt ngào",
+                wishPlaceholder: "Chúc hai bạn trăm năm hạnh phúc...",
+                submitButton: "Gửi lời chúc",
+                submitButtonSending: "Đang gửi...",
+                chatbotTitle: "Trò chuyện cùng Thư Ký Cưới",
+                chatbotPlaceholder: "Hỏi thư ký...",
+                initialBotMessage: "Xin chào! Bạn có câu hỏi gì về những lời chúc mà mọi người đã gửi không?",
+                fillFieldsMessage: "Vui lòng điền cả tên và lời chúc của bạn nhé!",
+                wishSentMessage: "Cảm ơn bạn đã gửi lời chúc!",
+                wishErrorMessage: "Đã có lỗi xảy ra khi gửi lời chúc. Vui lòng thử lại.",
+                noWishesMessage: "Hiện tại chưa có lời chúc nào để tôi phân tích cả.",
+                botThinking: "Thư ký đang suy nghĩ...",
+                botErrorMessage: "Rất tiếc, tôi đang gặp chút sự cố. Vui lòng thử lại sau.",
+                ragPromptSystem: "Bạn là một thư ký đám cưới AI. Dựa vào danh sách các lời chúc dưới đây, hãy trả lời câu hỏi của người dùng. QUAN TRỌNG: Chỉ được sử dụng thông tin từ các lời chúc được cung cấp. Không được bịa đặt hoặc thêm bất kỳ thông tin nào từ bên ngoài. Nếu câu hỏi không thể trả lời được từ thông tin đã cho, hãy trả lời một cách lịch sự rằng bạn không có thông tin đó trong các lời chúc.",
+                ragWishesList: "Danh sách lời chúc:",
+                ragUserQuestion: "Câu hỏi của người dùng:"
+            }
+        };
+
+        function setLanguage(lang) {
+            currentLanguage = lang;
+            const t = translations[lang];
+
+            document.documentElement.lang = lang;
+            document.getElementById('main-title').textContent = t.mainTitle;
+            document.getElementById('main-subtitle').textContent = t.mainSubtitle;
+            document.getElementById('name-label').textContent = t.nameLabel;
+            guestName.placeholder = t.namePlaceholder;
+            document.getElementById('wish-label').textContent = t.wishLabel;
+            guestWish.placeholder = t.wishPlaceholder;
+            submitWishBtn.textContent = t.submitButton;
+            document.getElementById('chatbot-title').textContent = t.chatbotTitle;
+            chatInput.placeholder = t.chatbotPlaceholder;
+
+            // Update active button style
+            langViBtn.classList.toggle('active', lang === 'vi');
+            langEnBtn.classList.toggle('active', lang === 'en');
+
+            // Clear chat and add initial message in new language
+            chatbox.innerHTML = '';
+            addMessageToChat(t.initialBotMessage, 'bot');
+        }
+
+        langViBtn.addEventListener('click', () => setLanguage('vi'));
+        langEnBtn.addEventListener('click', () => setLanguage('en'));
+
+        // --- Firestore Logic ---
+        const wishesCollectionPath = `/artifacts/${appId}/public/data/wishes`;
+
+        async function saveWish(name, wish) {
+            if (!db) return;
+            try {
+                await addDoc(collection(db, wishesCollectionPath), { name, wish, createdAt: new Date() });
+                guestName.value = '';
+                guestWish.value = '';
+                addMessageToChat(translations[currentLanguage].wishSentMessage, 'bot');
+            } catch (e) {
+                console.error("Error adding document: ", e);
+                addMessageToChat(translations[currentLanguage].wishErrorMessage, 'bot');
+            }
+        }
+
+        function listenForWishes() {
+            if (!db) return;
+            const q = query(collection(db, wishesCollectionPath));
+            onSnapshot(q, (snapshot) => {
+                wishesCache = snapshot.docs.map(doc => doc.data());
+                console.log("Wishes cache updated:", wishesCache);
+            }, (error) => console.error("Error listening for wishes:", error));
+        }
+
+        // --- Chatbot (RAG with Gemini API) ---
+        async function answerQuestion(question) {
+            const t = translations[currentLanguage];
+            if (wishesCache.length === 0) {
+                addMessageToChat(t.noWishesMessage, 'bot');
+                return;
+            }
+
+            const context = wishesCache.map(w => `- Wish from ${w.name}: "${w.wish}"`).join('\n');
+            const prompt = `${t.ragPromptSystem}\n\n**${t.ragWishesList}**\n${context}\n\n**${t.ragUserQuestion}** "${question}"\n\n**Your Answer:**`;
+
+            const payload = { contents: [{ role: "user", parts: [{ text: prompt }] }] };
+            const apiKey = "";
+            const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${apiKey}`;
+
+            try {
+                const response = await fetch(apiUrl, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+                const result = await response.json();
+                if (result.candidates && result.candidates[0].content.parts[0].text) {
+                    addMessageToChat(result.candidates[0].content.parts[0].text, 'bot');
+                } else {
+                     throw new Error('Invalid response from chat API.');
+                }
+            } catch (error) {
+                console.error('Error with chatbot:', error);
+                addMessageToChat(t.botErrorMessage, 'bot');
+            }
+        }
+
+        function addMessageToChat(message, sender) {
+            const bubble = document.createElement('div');
+            bubble.classList.add('chat-bubble', sender === 'user' ? 'user-bubble' : 'bot-bubble');
+            const p = document.createElement('p');
+            p.textContent = message;
+            bubble.appendChild(p);
+            chatbox.appendChild(bubble);
+            chatbox.scrollTop = chatbox.scrollHeight;
+        }
+
+        // --- Event Listeners ---
+        submitWishBtn.addEventListener('click', async () => {
+            const name = guestName.value.trim();
+            const wish = guestWish.value.trim();
+
+            if (!name || !wish) {
+                addMessageToChat(translations[currentLanguage].fillFieldsMessage, 'bot');
+                return;
+            }
+
+            submitWishBtn.disabled = true;
+            submitWishBtn.textContent = translations[currentLanguage].submitButtonSending;
+
+            await saveWish(name, wish);
+
+            submitWishBtn.disabled = false;
+            submitWishBtn.textContent = translations[currentLanguage].submitButton;
+        });
+
+        const handleChatSend = async () => {
+            const question = chatInput.value.trim();
+            if (!question) return;
+
+            addMessageToChat(question, 'user');
+            chatInput.value = '';
+
+            const thinkingBubble = document.createElement('div');
+            thinkingBubble.classList.add('chat-bubble', 'bot-bubble', 'thinking');
+            thinkingBubble.textContent = translations[currentLanguage].botThinking;
+            chatbox.appendChild(thinkingBubble);
+            chatbox.scrollTop = chatbox.scrollHeight;
+
+            await answerQuestion(question);
+
+            const thinking = chatbox.querySelector('.thinking');
+            if (thinking) chatbox.removeChild(thinking);
+        };
+
+        sendChatBtn.addEventListener('click', handleChatSend);
+        chatInput.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') {
+                e.preventDefault();
+                handleChatSend();
+            }
+        });
+
+        // Initialize with default language
+        setLanguage('vi');
+
+    </script>
+</body>
+</html>
