@@ -19,28 +19,25 @@
         .font-pacifico {
             font-family: 'Pacifico', cursive;
         }
-        .chat-bubble {
-            max-width: 75%;
-            padding: 10px 15px;
-            border-radius: 20px;
-            margin-bottom: 10px;
-            word-wrap: break-word;
+        /* Chat-related styles removed as per request */
+        .message-box {
+            padding: 12px;
+            border-radius: 8px;
+            font-weight: 500;
+            margin-top: 16px;
+            display: none; /* Hidden by default */
         }
-        .user-bubble {
-            background-color: #0d9488; /* teal-600 */
-            color: white;
-            align-self: flex-end;
-            border-bottom-right-radius: 5px;
+        .message-box.success {
+            background-color: #065f46; /* green-700 */
+            color: #d1fae5; /* green-100 */
         }
-        .bot-bubble {
-            background-color: #374151; /* gray-700 */
-            color: #d1d5db; /* gray-300 */
-            align-self: flex-start;
-            border-bottom-left-radius: 5px;
+        .message-box.error {
+            background-color: #991b1b; /* red-800 */
+            color: #fee2e2; /* red-100 */
         }
-        .lang-btn.active {
-            background-color: #14b8a6; /* teal-500 */
-            color: white;
+        .message-box.info {
+            background-color: #1e3a8a; /* blue-800 */
+            color: #dbeafe; /* blue-100 */
         }
     </style>
 </head>
@@ -49,7 +46,7 @@
     <div class="container mx-auto p-4 md:p-8 max-w-2xl">
         <div class="bg-gray-900/80 backdrop-blur-sm rounded-2xl shadow-2xl p-6 md:p-10 relative">
 
-            <!-- --- THAY ĐỔI: Thêm khu vực chọn ngôn ngữ --- -->
+            <!-- Language selection area -->
             <div class="absolute top-4 right-4 flex space-x-2">
                 <button id="lang-vi" class="lang-btn px-3 py-1 text-sm border border-teal-600 rounded-md hover:bg-teal-700 transition">Tiếng Việt</button>
                 <button id="lang-en" class="lang-btn px-3 py-1 text-sm border border-teal-600 rounded-md hover:bg-teal-700 transition">English</button>
@@ -70,21 +67,21 @@
                     <textarea id="guestWish" rows="5" class="w-full px-4 py-3 bg-gray-800 border border-teal-700 rounded-lg focus:ring-teal-500 focus:border-teal-500 transition text-white placeholder-gray-500"></textarea>
                 </div>
                 <button id="submitWish" class="w-full bg-teal-500 text-white font-bold py-3 px-6 rounded-lg hover:bg-teal-600 transition-transform transform hover:scale-105 shadow-lg"></button>
-            </div>
 
-            <div class="mt-12 border-t-2 border-teal-900/50 pt-8">
-                <h2 id="chatbot-title" class="font-pacifico text-3xl text-center text-teal-300 mb-6"></h2>
-                <div class="bg-gray-900/70 p-4 rounded-xl shadow-inner max-w-2xl mx-auto">
-                    <div id="chatbox" class="h-64 overflow-y-auto mb-4 p-2 flex flex-col space-y-2">
-                        <!-- Tin nhắn mặc định sẽ được thêm bằng JS -->
-                    </div>
-                    <div class="flex space-x-2">
-                        <input type="text" id="chatInput" class="flex-grow px-4 py-2 bg-gray-700 border border-gray-600 rounded-full focus:ring-teal-500 focus:border-teal-500 text-white placeholder-gray-400">
-                        <button id="sendChat" class="bg-teal-500 text-white rounded-full p-3 hover:bg-teal-600 transition">
-                            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-send"><line x1="22" y1="2" x2="11" y2="13"></line><polygon points="22 2 15 22 11 13 2 9 22 2"></polygon></svg>
-                        </button>
-                    </div>
+                <!-- Message box for alerts -->
+                <div id="messageBox" class="message-box"></div>
+
+                <!-- Export to Google Sheets section - REMOVED FROM UI FOR USERS -->
+                <!--
+                <div class="mt-8 pt-6 border-t-2 border-teal-900/50">
+                    <h2 id="export-title" class="font-pacifico text-2xl text-center text-teal-300 mb-4"></h2>
+                    <p id="export-description" class="text-gray-400 text-center mb-4"></p>
+                    <button id="exportWishesBtn" class="w-full bg-blue-600 text-white font-bold py-3 px-6 rounded-lg hover:bg-blue-700 transition-transform transform hover:scale-105 shadow-lg">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="inline-block w-5 h-5 mr-2" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line><line x1="10" y1="9" x2="10" y2="9"></line></svg>
+                        <span id="export-button-text"></span>
+                    </button>
                 </div>
+                -->
             </div>
         </div>
     </div>
@@ -135,11 +132,10 @@
         const guestName = document.getElementById('guestName');
         const guestWish = document.getElementById('guestWish');
         const submitWishBtn = document.getElementById('submitWish');
-        const chatbox = document.getElementById('chatbox');
-        const chatInput = document.getElementById('chatInput');
-        const sendChatBtn = document.getElementById('sendChat');
         const langViBtn = document.getElementById('lang-vi');
         const langEnBtn = document.getElementById('lang-en');
+        const messageBox = document.getElementById('messageBox');
+        // const exportWishesBtn = document.getElementById('exportWishesBtn'); // Removed as per request
 
         // --- I18N & Language Logic ---
         let currentLanguage = 'vi';
@@ -153,18 +149,13 @@
                 wishPlaceholder: "Wishing you a lifetime of happiness...",
                 submitButton: "Send Wish",
                 submitButtonSending: "Sending...",
-                chatbotTitle: "Chat with the Wedding Secretary",
-                chatbotPlaceholder: "Ask the secretary...",
-                initialBotMessage: "Hello! Do you have any questions about the wishes everyone has sent?",
                 fillFieldsMessage: "Please fill in both your name and your wish!",
                 wishSentMessage: "Thank you for sending your wish!",
                 wishErrorMessage: "An error occurred while sending your wish. Please try again.",
-                noWishesMessage: "There are no wishes for me to analyze yet.",
-                botThinking: "The secretary is thinking...",
-                botErrorMessage: "Sorry, I'm having a little trouble. Please try again later.",
-                ragPromptSystem: "You are an AI wedding secretary. Based on the list of wishes below, answer the user's question. IMPORTANT: Only use information from the provided wishes. Do not invent or add any external information. If the question cannot be answered from the given information, politely state that you do not have that information in the wishes.",
-                ragWishesList: "List of wishes:",
-                ragUserQuestion: "User's question:"
+                exportTitle: "Export Wishes", // Kept for potential console use
+                exportDescription: "Download all collected wishes as a CSV file, which can be easily imported into Google Sheets.", // Kept for potential console use
+                exportButtonText: "Download Wishes (CSV)", // Kept for potential console use
+                noWishesToExport: "No wishes to export yet."
             },
             vi: {
                 mainTitle: "Gửi Lời Chúc",
@@ -175,18 +166,13 @@
                 wishPlaceholder: "Chúc hai bạn trăm năm hạnh phúc...",
                 submitButton: "Gửi lời chúc",
                 submitButtonSending: "Đang gửi...",
-                chatbotTitle: "Trò chuyện cùng Thư Ký Cưới",
-                chatbotPlaceholder: "Hỏi thư ký...",
-                initialBotMessage: "Xin chào! Bạn có câu hỏi gì về những lời chúc mà mọi người đã gửi không?",
                 fillFieldsMessage: "Vui lòng điền cả tên và lời chúc của bạn nhé!",
                 wishSentMessage: "Cảm ơn bạn đã gửi lời chúc!",
                 wishErrorMessage: "Đã có lỗi xảy ra khi gửi lời chúc. Vui lòng thử lại.",
-                noWishesMessage: "Hiện tại chưa có lời chúc nào để tôi phân tích cả.",
-                botThinking: "Thư ký đang suy nghĩ...",
-                botErrorMessage: "Rất tiếc, tôi đang gặp chút sự cố. Vui lòng thử lại sau.",
-                ragPromptSystem: "Bạn là một thư ký đám cưới AI. Dựa vào danh sách các lời chúc dưới đây, hãy trả lời câu hỏi của người dùng. QUAN TRỌNG: Chỉ được sử dụng thông tin từ các lời chúc được cung cấp. Không được bịa đặt hoặc thêm bất kỳ thông tin nào từ bên ngoài. Nếu câu hỏi không thể trả lời được từ thông tin đã cho, hãy trả lời một cách lịch sự rằng bạn không có thông tin đó trong các lời chúc.",
-                ragWishesList: "Danh sách lời chúc:",
-                ragUserQuestion: "Câu hỏi của người dùng:"
+                exportTitle: "Xuất Lời Chúc", // Kept for potential console use
+                exportDescription: "Tải xuống tất cả lời chúc đã thu thập dưới dạng tệp CSV, có thể dễ dàng nhập vào Google Sheets.", // Kept for potential console use
+                exportButtonText: "Tải xuống Lời Chúc (CSV)", // Kept for potential console use
+                noWishesToExport: "Chưa có lời chúc nào để xuất."
             }
         };
 
@@ -202,20 +188,28 @@
             document.getElementById('wish-label').textContent = t.wishLabel;
             guestWish.placeholder = t.wishPlaceholder;
             submitWishBtn.textContent = t.submitButton;
-            document.getElementById('chatbot-title').textContent = t.chatbotTitle;
-            chatInput.placeholder = t.chatbotPlaceholder;
+            // Removed direct DOM updates for export section elements
+            // document.getElementById('export-title').textContent = t.exportTitle;
+            // document.getElementById('export-description').textContent = t.exportDescription;
+            // document.getElementById('export-button-text').textContent = t.exportButtonText;
 
             // Update active button style
             langViBtn.classList.toggle('active', lang === 'vi');
             langEnBtn.classList.toggle('active', lang === 'en');
-
-            // Clear chat and add initial message in new language
-            chatbox.innerHTML = '';
-            addMessageToChat(t.initialBotMessage, 'bot');
         }
 
         langViBtn.addEventListener('click', () => setLanguage('vi'));
         langEnBtn.addEventListener('click', () => setLanguage('en'));
+
+        // --- Message Display Function ---
+        function showMessage(message, type) {
+            messageBox.textContent = message;
+            messageBox.className = `message-box ${type}`; // Reset classes and apply new type
+            messageBox.style.display = 'block';
+            setTimeout(() => {
+                messageBox.style.display = 'none';
+            }, 5000); // Hide after 5 seconds
+        }
 
         // --- Firestore Logic ---
         const wishesCollectionPath = `/artifacts/${appId}/public/data/wishes`;
@@ -226,10 +220,10 @@
                 await addDoc(collection(db, wishesCollectionPath), { name, wish, createdAt: new Date() });
                 guestName.value = '';
                 guestWish.value = '';
-                addMessageToChat(translations[currentLanguage].wishSentMessage, 'bot');
+                showMessage(translations[currentLanguage].wishSentMessage, 'success');
             } catch (e) {
                 console.error("Error adding document: ", e);
-                addMessageToChat(translations[currentLanguage].wishErrorMessage, 'bot');
+                showMessage(translations[currentLanguage].wishErrorMessage, 'error');
             }
         }
 
@@ -237,53 +231,54 @@
             if (!db) return;
             const q = query(collection(db, wishesCollectionPath));
             onSnapshot(q, (snapshot) => {
-                wishesCache = snapshot.docs.map(doc => doc.data());
+                wishesCache = snapshot.docs.map(doc => ({
+                    id: doc.id, // Include document ID if needed
+                    ...doc.data()
+                }));
                 console.log("Wishes cache updated:", wishesCache);
             }, (error) => console.error("Error listening for wishes:", error));
         }
 
-        // --- Chatbot (RAG with Gemini API) ---
-        async function answerQuestion(question) {
-            const t = translations[currentLanguage];
+        // --- Export to CSV Function (Accessible via console for owner) ---
+        // This function is made global for easy access from the browser console.
+        window.exportWishesToCsv = function() {
             if (wishesCache.length === 0) {
-                addMessageToChat(t.noWishesMessage, 'bot');
+                console.log(translations[currentLanguage].noWishesToExport);
                 return;
             }
 
-            const context = wishesCache.map(w => `- Wish from ${w.name}: "${w.wish}"`).join('\n');
-            const prompt = `${t.ragPromptSystem}\n\n**${t.ragWishesList}**\n${context}\n\n**${t.ragUserQuestion}** "${question}"\n\n**Your Answer:**`;
+            // Define CSV headers
+            const headers = ['Name', 'Wish', 'Timestamp'];
 
-            const payload = { contents: [{ role: "user", parts: [{ text: prompt }] }] };
-            const apiKey = "";
-            const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${apiKey}`;
+            // Map data to CSV rows
+            const rows = wishesCache.map(wish => {
+                const name = `"${wish.name.replace(/"/g, '""')}"`; // Handle quotes in name
+                const wishText = `"${wish.wish.replace(/"/g, '""')}"`; // Handle quotes in wish
+                const timestamp = wish.createdAt ? new Date(wish.createdAt.toDate()).toLocaleString() : ''; // Convert Firebase Timestamp to readable string
+                return [name, wishText, timestamp].join(',');
+            });
 
-            try {
-                const response = await fetch(apiUrl, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify(payload)
-                });
-                const result = await response.json();
-                if (result.candidates && result.candidates[0].content.parts[0].text) {
-                    addMessageToChat(result.candidates[0].content.parts[0].text, 'bot');
-                } else {
-                     throw new Error('Invalid response from chat API.');
-                }
-            } catch (error) {
-                console.error('Error with chatbot:', error);
-                addMessageToChat(t.botErrorMessage, 'bot');
+            // Combine headers and rows
+            const csvContent = [headers.join(','), ...rows].join('\n');
+
+            // Create a Blob and download link
+            const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+            const link = document.createElement('a');
+            if (link.download !== undefined) { // Feature detection for download attribute
+                const url = URL.createObjectURL(blob);
+                link.setAttribute('href', url);
+                link.setAttribute('download', 'wedding_wishes.csv');
+                link.style.visibility = 'hidden';
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+                console.log("Wishes exported to wedding_wishes.csv");
+            } else {
+                // Fallback for browsers that don't support download attribute
+                console.warn("Your browser does not support downloading files directly. Please copy the content below:");
+                console.log(csvContent);
             }
-        }
-
-        function addMessageToChat(message, sender) {
-            const bubble = document.createElement('div');
-            bubble.classList.add('chat-bubble', sender === 'user' ? 'user-bubble' : 'bot-bubble');
-            const p = document.createElement('p');
-            p.textContent = message;
-            bubble.appendChild(p);
-            chatbox.appendChild(bubble);
-            chatbox.scrollTop = chatbox.scrollHeight;
-        }
+        };
 
         // --- Event Listeners ---
         submitWishBtn.addEventListener('click', async () => {
@@ -291,7 +286,7 @@
             const wish = guestWish.value.trim();
 
             if (!name || !wish) {
-                addMessageToChat(translations[currentLanguage].fillFieldsMessage, 'bot');
+                showMessage(translations[currentLanguage].fillFieldsMessage, 'error');
                 return;
             }
 
@@ -304,32 +299,7 @@
             submitWishBtn.textContent = translations[currentLanguage].submitButton;
         });
 
-        const handleChatSend = async () => {
-            const question = chatInput.value.trim();
-            if (!question) return;
-
-            addMessageToChat(question, 'user');
-            chatInput.value = '';
-
-            const thinkingBubble = document.createElement('div');
-            thinkingBubble.classList.add('chat-bubble', 'bot-bubble', 'thinking');
-            thinkingBubble.textContent = translations[currentLanguage].botThinking;
-            chatbox.appendChild(thinkingBubble);
-            chatbox.scrollTop = chatbox.scrollHeight;
-
-            await answerQuestion(question);
-
-            const thinking = chatbox.querySelector('.thinking');
-            if (thinking) chatbox.removeChild(thinking);
-        };
-
-        sendChatBtn.addEventListener('click', handleChatSend);
-        chatInput.addEventListener('keypress', (e) => {
-            if (e.key === 'Enter') {
-                e.preventDefault();
-                handleChatSend();
-            }
-        });
+        // exportWishesBtn.addEventListener('click', exportWishesToCsv); // Removed event listener for the button
 
         // Initialize with default language
         setLanguage('vi');
